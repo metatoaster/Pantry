@@ -1,8 +1,9 @@
 import unittest
 import tempfile
 import os
+import os.path
 
-from Pantry import pantry
+from pantry import pantry
 
 
 class TestPantry(unittest.TestCase):
@@ -33,6 +34,15 @@ class TestPantry(unittest.TestCase):
         with pantry(self.filename) as r:
             self.assertEqual(r['Test'], True)  # previous write
             self.assertEqual(r['SecondTest'], 4)  # second write
+
+    def test_no_file_pantry(self):
+        self.assertFalse(os.path.exists(self.filename+'new'))
+
+        with pantry(self.filename+'new') as p:
+            p['Test'] = True  # write to new pantry
+
+        with pantry(self.filename+'new') as p:
+            self.assertEqual(p['Test'], True)
 
 if __name__ == '__main__':
     unittest.main()
