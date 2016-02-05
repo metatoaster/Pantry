@@ -63,5 +63,35 @@ class TestPantryClass(TestPantry):
         p = pantry.open(self.filename+'new')
         self.assertEqual(p.db, {}) # should be empty
 
+class CustomPantry(object):
+
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+    def do_math(self):
+        return sum(self.args)
+
+class TestPantryCustomClass(TestPantry):
+
+    def test_pantry_custom_class(self):
+        p = pantry.open(self.filename)
+        custom = CustomPantry(True, False, a=1, b=2)
+        p.db = custom
+        self.assertEqual(p.db.kwargs['a'], 1)
+        p.close()
+
+        q = pantry.open(self.filename)
+        self.assertEqual(q.db.kwargs['a'], 1)
+
+    def test_pantry_custom_class_defs(self):
+        p = pantry.open(self.filename)
+        p.db = CustomPantry(1,2,3,4,5)
+        self.assertEqual(sum(p.db.args), sum((1,2,3,4,5)))
+        p.close()
+
+        with pantry(self.filename) as q:
+            self.assertEqual(p.db.do_math(), sum((1,2,3,4,5)))
+
 if __name__ == '__main__':
     unittest.main()
