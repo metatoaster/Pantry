@@ -1,7 +1,7 @@
-import unittest
-import tempfile
 import os
 import os.path
+import unittest
+import tempfile
 
 from pantry import pantry
 
@@ -32,7 +32,6 @@ class TestPantryContext(TestPantry):
         with pantry(self.filename) as q:
             self.assertEqual(q['Test'], True)  # Should be True
             q['SecondTest'] = 4  # determined to be random enough
-            #q.pop('Test')
 
         with pantry(self.filename) as r:
             self.assertEqual(r['Test'], True)  # previous write
@@ -52,7 +51,7 @@ class TestPantryClass(TestPantry):
 
     def test_new_pantry(self):
         p = pantry.open(self.filename)
-        self.assertEqual(p.db, {}) # should be empty
+        self.assertEqual(p.db, {})  # should be empty
         p.db['Test'] = True
         p.close()
 
@@ -61,7 +60,20 @@ class TestPantryClass(TestPantry):
 
     def test_no_file_pantry(self):
         p = pantry.open(self.filename+'new')
-        self.assertEqual(p.db, {}) # should be empty
+        self.assertEqual(p.db, {})  # should be empty
+
+    def test_immediate_save(self):
+        db = {'a': 1, 'b': 2}
+        pantry.store(self.filename, db)
+
+        p = pantry.open(self.filename)
+        self.assertEqual(p.db['a'], 1)
+        p.db['b'] = 3
+        p.close()
+
+        with pantry(self.filename) as db:
+            self.assertEqual(db['b'], 3)
+
 
 class CustomPantry(object):
 
@@ -71,6 +83,7 @@ class CustomPantry(object):
 
     def do_math(self):
         return sum(self.args)
+
 
 class TestPantryCustomClass(TestPantry):
 
@@ -86,12 +99,12 @@ class TestPantryCustomClass(TestPantry):
 
     def test_pantry_custom_class_defs(self):
         p = pantry.open(self.filename)
-        p.db = CustomPantry(1,2,3,4,5)
-        self.assertEqual(sum(p.db.args), sum((1,2,3,4,5)))
+        p.db = CustomPantry(1, 2, 3, 4, 5)
+        self.assertEqual(sum(p.db.args), sum((1, 2, 3, 4, 5)))
         p.close()
 
         with pantry(self.filename) as q:
-            self.assertEqual(p.db.do_math(), sum((1,2,3,4,5)))
+            self.assertEqual(q.do_math(), sum((1, 2, 3, 4, 5)))
 
 if __name__ == '__main__':
     unittest.main()
