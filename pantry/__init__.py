@@ -1,11 +1,15 @@
 import os.path
 import pickle
+import inspect
+import linecache
+import ast
 
 
 class pantry(object):
 
-    def __init__(self, filename):
+    def __init__(self, filename, frame_magic=False):
         self.filename = filename
+        self.frame_magic = frame_magic
 
     @property
     def db(self):
@@ -31,7 +35,21 @@ class pantry(object):
     def close(self):
         self._close_pantry()
 
+    def _capture_unbound_var_name(self, frame):
+        # collect basic information from frame
+        filename = frame.f_back.f_code.co_filename
+        lineno = frame.f_back.f_lineno
+        # Assuming the single line returned is valid, remove leading
+        # indent and append pass to allow this be parsed.
+        tree = ast.parse(linecache.getline(filename, lineno).strip() + 'pass')
+        # This is the name that the return value of __enter__ will bound
+        # to
+        self._bound_to = tree.body[0].items[0].optional_vars.id
+
     def __enter__(self):
+        if self.frame_magic:
+            frame = inspect.currentframe()
+            self._capture_unbound_var_name(frame)
         self._open_pantry()
         return self.db
 
@@ -50,6 +68,12 @@ class pantry(object):
             self._db = {}
 
     def _close_pantry(self):
+        if self.frame_magic:
+            frame = inspect.currentframe()
+            # grab the bounded value from the target frame.
+            # structured as: current, __exit__, target
+            self._db = frame.f_back.f_back.f_locals[self._bound_to]
+
         with open(self.filename, 'wb') as f:
             data = pickle.dumps(self._db)
             f.write(data)
