@@ -46,6 +46,14 @@ class TestPantryContext(TestPantry):
         with pantry(self.filename+'new') as p:
             self.assertEqual(p['Test'], True)
 
+    def test_set_frame(self):
+        with pantry(self.filename, frame_magic=True) as p:
+            self.assertEqual(isinstance(p, dict), True)  # pantry object should be dict
+            p = {'butts': True}
+
+        with pantry(self.filename) as p:
+            self.assertEqual(p, {'butts': True})
+
 
 class TestPantryClass(TestPantry):
 
